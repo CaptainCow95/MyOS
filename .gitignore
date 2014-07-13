@@ -1,2 +1,6 @@
 *~
 toolchain-build
+bochsout.txt
+isofiles
+*.o
+boot.iso

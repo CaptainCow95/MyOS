@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sudo apt-get install make nasm gcc g++ libgmp-dev libmpfr-dev libmpc-dev qemu genisoimage grub
+sudo apt-get install make nasm gcc g++ libgmp-dev libmpfr-dev libmpc-dev genisoimage grub bochs bochs-sdl
 
 mkdir toolchain-build
 cd toolchain-build

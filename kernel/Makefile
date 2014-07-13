@@ -6,14 +6,17 @@ ASMOBJFILES := $(patsubst %.asm,%.o,$(ASMFILES))
 all: ../isofiles/boot/kernel.bin
 
 ../isofiles/boot/kernel.bin: $(CPPOBJFILES) $(ASMOBJFILES)
-	i686-elf-ld -T linker.ld -o ../isofiles/boot/kernel.bin $(CPPOBJFILES) $(ASMOBJFILES)
+	@echo "Linking..."
+	@i686-elf-ld -T linker.ld -o ../isofiles/boot/kernel.bin $(CPPOBJFILES) $(ASMOBJFILES)
 
 clean:
 	-rm $(CPPOBJFILES) $(ASMOBJFILES)
 	-rm ../isofiles/boot/kernel.bin
 
 %.o: %.cpp
-	i686-elf-g++ -c $< -o $@ -ffreestanding -O2 -Wall -Wextra -fno-exceptions -fno-rtti
+	@echo "g++  " $<
+	@i686-elf-g++ -c $< -o $@ -ffreestanding -O2 -Wall -Wextra -fno-exceptions -fno-rtti
 
 %.o: %.asm
-	nasm -felf $< -o $@
+	@echo "nasm " $<
+	@nasm -felf $< -o $@
