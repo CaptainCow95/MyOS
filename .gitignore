@@ -6,4 +6,4 @@ isofiles
 boot.iso
 bin
 includes
-*/obj/*
+obj

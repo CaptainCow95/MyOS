@@ -77,7 +77,7 @@ endef
 # template to add global links to the include files.
 define INCLUDE_template
 $(shell mkdir -p ./includes)
-$(shell ln -s -f -n ../$(1)/includes includes/$(1))
+$(shell ln -s -f -n ../$(1)/include includes/$(1))
 endef
 
 # add the templates for each module
