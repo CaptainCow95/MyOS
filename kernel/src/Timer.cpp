@@ -16,6 +16,6 @@ void Timer::Init(uint32_t frequency)
 	Interrupts::RegisterInterruptHandler(IRQ0, &InterruptCallback);
 }
 
-void Timer::InterruptCallback(Registers* regs)
+void Timer::InterruptCallback(Registers*)
 {
 }

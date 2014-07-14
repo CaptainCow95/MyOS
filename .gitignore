@@ -4,3 +4,6 @@ bochsout.txt
 isofiles
 *.o
 boot.iso
+bin
+includes
+*/obj/*
