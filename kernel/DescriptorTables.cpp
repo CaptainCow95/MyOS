@@ -32,6 +32,17 @@ void DescriptorTables::InitIDT()
 	
 	memset(&_idtEntries, 0, sizeof(IDTEntry) * 256);
 	
+	outb(0x20, 0x11);
+	outb(0xA0, 0x11);
+	outb(0x21, 0x20);
+	outb(0xA1, 0x28);
+	outb(0x21, 0x04);
+	outb(0xA1, 0x02);
+	outb(0x21, 0x01);
+	outb(0xA1, 0x01);
+	outb(0x21, 0x0);
+	outb(0xA1, 0x0);
+	
 	IDTSetGate(0, (uint32_t)isr0, 0x08, 0x8E);
 	IDTSetGate(1, (uint32_t)isr1, 0x08, 0x8E);
 	IDTSetGate(2, (uint32_t)isr2, 0x08, 0x8E);
@@ -64,6 +75,23 @@ void DescriptorTables::InitIDT()
 	IDTSetGate(29, (uint32_t)isr29, 0x08, 0x8E);
 	IDTSetGate(30, (uint32_t)isr30, 0x08, 0x8E);
 	IDTSetGate(31, (uint32_t)isr31, 0x08, 0x8E);
+	
+	IDTSetGate(32, (uint32_t)irq0, 0x08, 0x8E);
+	IDTSetGate(33, (uint32_t)irq1, 0x08, 0x8E);
+	IDTSetGate(34, (uint32_t)irq2, 0x08, 0x8E);
+	IDTSetGate(35, (uint32_t)irq3, 0x08, 0x8E);
+	IDTSetGate(36, (uint32_t)irq4, 0x08, 0x8E);
+	IDTSetGate(37, (uint32_t)irq5, 0x08, 0x8E);
+	IDTSetGate(38, (uint32_t)irq6, 0x08, 0x8E);
+	IDTSetGate(39, (uint32_t)irq7, 0x08, 0x8E);
+	IDTSetGate(40, (uint32_t)irq8, 0x08, 0x8E);
+	IDTSetGate(41, (uint32_t)irq9, 0x08, 0x8E);
+	IDTSetGate(42, (uint32_t)irq10, 0x08, 0x8E);
+	IDTSetGate(43, (uint32_t)irq11, 0x08, 0x8E);
+	IDTSetGate(44, (uint32_t)irq12, 0x08, 0x8E);
+	IDTSetGate(45, (uint32_t)irq13, 0x08, 0x8E);
+	IDTSetGate(46, (uint32_t)irq14, 0x08, 0x8E);
+	IDTSetGate(47, (uint32_t)irq15, 0x08, 0x8E);
 	
 	IDTFlush((uint32_t)&_idtPtr);
 }

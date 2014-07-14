@@ -1,5 +1,10 @@
 #include "Common.h"
 
+void outb(uint16_t port, uint8_t val)
+{
+	asm volatile("outb %0, %1" : : "a"(val), "Nd"(port));
+}
+
 void* memset(void* s, int32_t c, size_t n)
 {
 	unsigned char* p = (unsigned char*)s;

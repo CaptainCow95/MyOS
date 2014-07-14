@@ -27,6 +27,7 @@ enum vga_color
 uint8_t make_color(enum vga_color fg, enum vga_color bg);
 void terminal_initialize();
 void terminal_setcolor(uint8_t color);
+void terminal_putchar(char c);
 void terminal_writestring(const char* data);
 
 #endif

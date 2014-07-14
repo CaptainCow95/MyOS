@@ -1,6 +1,6 @@
 #!/bin/bash
 
-sudo apt-get install make nasm gcc g++ libgmp-dev libmpfr-dev libmpc-dev genisoimage grub bochs bochs-sdl
+sudo apt-get install make nasm gcc g++ libgmp-dev libmpfr-dev libmpc-dev genisoimage grub
 
 mkdir toolchain-build
 cd toolchain-build
@@ -29,4 +29,20 @@ make all-gcc
 make install-gcc
 
 cd ..
+cd ..
+
+sudo apt-get install libgtk2.0-dev libsdl1.2-dev
+
+cd toolchain-build
+
+wget -O bochs-2.6.6.tar.gz http://downloads.sourceforge.net/project/bochs/bochs/2.6.6/bochs-2.6.6.tar.gz
+
+tar -xf bochs-2.6.6.tar.gz
+
+cd bochs-2.6.6
+
+./configure --enable-smp --enable-all-optimizations --enable-x86-64 --enable-pci --enable-vmx --enable-logging --enable-fpu --enable-3dnow --enable-sb16=dummy --enable-cdrom --disable-plugins --disable-docbook --with-sdl
+
+make
+
 cd ..
