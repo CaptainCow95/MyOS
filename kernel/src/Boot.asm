@@ -48,5 +48,7 @@ _start:
 	hlt
 	jmp .hang
 
+section .bss
+align 4
 magic: resd 1
 mbd: resd 1

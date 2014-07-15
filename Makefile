@@ -3,7 +3,7 @@ MODULES := kernel
 # global cpp flags
 CPPFLAGS_global := -MMD -I includes
 # global asm flags
-ASMFLAGS_global := -felf
+ASMFLAGS_global := -f elf
 # global ld flags
 LDFLAGS_global :=
 
@@ -58,7 +58,7 @@ $(1)/obj/debug/%.o: $(1)/src/%.asm
 $(1)/obj/release/%.o: $(1)/src/%.asm
 	@mkdir -p ./$(1)/obj/release
 	@echo "nasm " $$<
-	@nasm $$(ASMFLAGS_global) $(ASMFLAGS_$(1)) $$(ASMFLAGS_DEBUG_$(1)) $$< -o $$@
+	@nasm $$(ASMFLAGS_global) $(ASMFLAGS_$(1)) $$(ASMFLAGS_RELEASE_$(1)) $$< -o $$@
 endef
 
 # template to include all the program build steps

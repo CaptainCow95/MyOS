@@ -4,7 +4,7 @@
 #include "Common.h"
 
 /* Hardware text mode color constants. */
-enum vga_color
+enum TerminalColor
 {
 	COLOR_BLACK = 0,
 	COLOR_BLUE = 1,
@@ -13,8 +13,8 @@ enum vga_color
 	COLOR_RED = 4,
 	COLOR_MAGENTA = 5,
 	COLOR_BROWN = 6,
-	COLOR_LIGHT_GREY = 7,
-	COLOR_DARK_GREY = 8,
+	COLOR_LIGHT_GRAY = 7,
+	COLOR_DARK_GRAY = 8,
 	COLOR_LIGHT_BLUE = 9,
 	COLOR_LIGHT_GREEN = 10,
 	COLOR_LIGHT_CYAN = 11,
@@ -24,10 +24,24 @@ enum vga_color
 	COLOR_WHITE = 15,
 };
 
-uint8_t make_color(enum vga_color fg, enum vga_color bg);
-void terminal_initialize();
-void terminal_setcolor(uint8_t color);
-void terminal_putchar(char c);
-void terminal_writestring(const char* data);
+class Terminal
+{
+public:
+	static void Init();
+	static void SetColor(enum TerminalColor, enum TerminalColor);
+	static void PutChar(char);
+	static void Write(const char*);
+	static void WriteDec(uint32_t);
+	static void WriteDec(int32_t);
+	static void WriteHex(uint32_t);
+	static void WriteHex(int32_t);
+private:
+	static void PutChar(char, uint32_t, uint32_t);
+	
+	static uint32_t _row;
+	static uint32_t _column;
+	static uint8_t _color;
+	static uint16_t* _buffer;
+};
 
 #endif

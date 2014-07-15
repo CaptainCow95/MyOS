@@ -1,5 +1,6 @@
 #include "MemoryManager.h"
 #include "Paging.h"
+#include "Terminal.h"
 
 #define INDEX_FROM_BIT(a) (a/(8*4))
 #define OFFSET_FROM_BIT(a) (a%(8*4))
@@ -158,6 +159,13 @@ void Paging::PageFault(Registers* regs)
 	bool user = regs->ErrorCode & 0x4;
 	bool reserved = regs->ErrorCode & 0x8;
 	
-	// TODO: Write to terminal
+	Terminal::Write("\n\nPage Fault! (");
+	if(present) Terminal::Write("not present");
+	if(readWrite) Terminal::Write("read-only");
+	if(user) Terminal::Write("user-mode");
+	if(reserved) Terminal::Write("reserved");
+	Terminal::Write(") at ");
+	Terminal::WriteHex(faultingAddress);
+	Terminal::Write("\n");
 	PANIC("Page fault!");
 }

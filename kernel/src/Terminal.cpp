@@ -1,68 +1,146 @@
 #include "Terminal.h"
- 
-uint8_t make_color(enum vga_color fg, enum vga_color bg)
+
+#define TERMINAL_HEIGHT 25
+#define TERMINAL_WIDTH 80
+
+uint32_t Terminal::_row;
+uint32_t Terminal::_column;
+uint8_t Terminal::_color;
+uint16_t* Terminal::_buffer;
+
+void Terminal::Init()
 {
-	return fg | bg << 4;
-}
- 
-uint16_t make_vgaentry(char c, uint8_t color)
-{
-	uint16_t c16 = c;
-	uint16_t color16 = color;
-	return c16 | color16 << 8;
-}
- 
-static const size_t VGA_WIDTH = 80;
-static const size_t VGA_HEIGHT = 25;
- 
-size_t terminal_row;
-size_t terminal_column;
-uint8_t terminal_color;
-uint16_t* terminal_buffer;
- 
-void terminal_initialize()
-{
-	terminal_row = 0;
-	terminal_column = 0;
-	terminal_color = make_color(COLOR_LIGHT_GREY, COLOR_BLACK);
-	terminal_buffer = (uint16_t*) 0xB8000;
-	for ( size_t y = 0; y < VGA_HEIGHT; y++ )
+	_row = 0;
+	_column = 0;
+	SetColor(COLOR_LIGHT_GRAY, COLOR_BLACK);
+	_buffer = (uint16_t*)0xB8000;
+	for(uint32_t y = 0; y < TERMINAL_HEIGHT; ++y)
 	{
-		for ( size_t x = 0; x < VGA_WIDTH; x++ )
+		for(uint32_t x = 0; x < TERMINAL_WIDTH; ++x)
 		{
-			const size_t index = y * VGA_WIDTH + x;
-			terminal_buffer[index] = make_vgaentry(' ', terminal_color);
+			PutChar(' ', y, x);
 		}
 	}
 }
- 
-void terminal_setcolor(uint8_t color)
+
+void Terminal::SetColor(enum TerminalColor foreground, enum TerminalColor background)
 {
-	terminal_color = color;
+	_color = foreground | background << 4;
 }
- 
-void terminal_putentryat(char c, uint8_t color, size_t x, size_t y)
+
+void Terminal::PutChar(char c, uint32_t y, uint32_t x)
 {
-	const size_t index = y * VGA_WIDTH + x;
-	terminal_buffer[index] = make_vgaentry(c, color);
+	_buffer[y * TERMINAL_WIDTH + x] = ((uint16_t)c) | (((uint16_t)_color) << 8);
 }
- 
-void terminal_putchar(char c)
+
+void Terminal::PutChar(char c)
 {
-	terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
-	if ( ++terminal_column == VGA_WIDTH )
+	if(c == '\n')
 	{
-		terminal_column = 0;
-		if ( ++terminal_row == VGA_HEIGHT )
+		++_row;
+		_column = 0;
+	}
+	else if(c == '\r')
+	{
+		_column = 0;
+	}
+	else if(c == '\t')
+	{
+		_column += 4 - _column % 4;
+	}
+	else
+	{
+		PutChar(c, _row, _column);
+		++_column;
+	}
+	if(_column == TERMINAL_WIDTH)
+	{
+		_column = 0;
+		++_row;
+		if(_row == TERMINAL_HEIGHT)
 		{
-			terminal_row = 0;
+			++_row;
+			
+			if(_row == TERMINAL_HEIGHT - 1)
+			{
+				for(uint32_t y = 0; y < TERMINAL_HEIGHT - 1; ++y)
+				{
+					for(uint32_t x = 0; x < TERMINAL_WIDTH; ++x)
+					{
+						_buffer[y * TERMINAL_WIDTH + x] = _buffer[(y + 1) * TERMINAL_WIDTH + x];
+					}
+				}
+				
+				for(uint32_t x = 0; x < TERMINAL_WIDTH; ++x)
+				{
+					PutChar(' ', _row, x);
+				}
+				
+				--_row;
+			}
 		}
 	}
+	
+	uint16_t cursorPosition = _row * 80 + _column;
+	outb(0x3D4, 0x0F);
+	outb(0x3D5, (uint8_t)(cursorPosition & 0xFF));
+	outb(0x3D4, 0x0E);
+	outb(0x3D5, (uint8_t)((cursorPosition >> 8) & 0xFF));
 }
- 
-void terminal_writestring(const char* data)
+
+void Terminal::Write(const char* data)
 {
-	size_t datalen = strlen(data);
-	for ( size_t i = 0; i < datalen; i++ )
-		terminal_putchar(data[i]);
+	uint32_t length = strlen(data);
+	for(uint32_t i = 0; i < length; ++i)
+	{
+		PutChar(data[i]);
+	}
+}
+
+void Terminal::WriteDec(int32_t num)
+{
+	char str[12];
+	itoa(num, str, 10);
+	Write(str);
+}
+
+void Terminal::WriteDec(uint32_t num)
+{
+	char str[11];
+	itoa(num, str, 10);
+	Write(str);
+}
+
+void Terminal::WriteHex(int32_t num)
+{
+	char str[10];
+	itoa(num, str, 16);
+	if(str[0] == '-')
+	{
+		PutChar('-');
+		PutChar('0');
+		PutChar('x');
+		Write(&str[1]);
+	}
+	else
+	{
+		PutChar('0');
+		PutChar('x');
+		Write(str);
+	}
+}
+
+void Terminal::WriteHex(uint32_t num)
+{
+	char str[9];
+	itoa(num, str, 16);
+	PutChar('0');
+	PutChar('x');
+	int32_t length = strlen(str);
+	while(length < 8)
+	{
+		PutChar('0');
+		++length;
+	}
+	Write(str);
 }
