@@ -1,4 +1,5 @@
 #include "Common.h"
+#include "Terminal.h"
 
 void outb(uint16_t port, uint8_t val)
 {
@@ -19,4 +20,18 @@ size_t strlen(const char* str)
 	while ( str[ret] != 0 )
 		ret++;
 	return ret;
+}
+
+void panic(const char* message, const char* file, uint32_t line)
+{
+	asm volatile("cli");
+	
+	terminal_writestring("PANIC(");
+	terminal_writestring(message);
+	terminal_writestring(") at ");
+	terminal_writestring(file);
+	terminal_writestring(":");
+	// write line
+	
+	for(;;);
 }

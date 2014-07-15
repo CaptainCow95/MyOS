@@ -1,3 +1,6 @@
+global magic
+global mbd
+
 ; Declare constants used for creating a multiboot header.
 MBALIGN     equ  1<<0                   ; align loaded modules on page boundaries
 MEMINFO     equ  1<<1                   ; provide memory map
@@ -35,9 +38,15 @@ _start:
 	; To set up a stack, we simply set the esp register to point to the top of
 	; our stack (as it grows downwards).
 	mov esp, stack_top
+	
+	mov [magic], eax
+	mov [mbd], ebx
 
 	extern kernel_main
 	call kernel_main
 .hang:
 	hlt
 	jmp .hang
+
+magic: resd 1
+mbd: resd 1
