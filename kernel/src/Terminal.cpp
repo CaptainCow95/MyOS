@@ -57,28 +57,24 @@ void Terminal::PutChar(char c)
 	{
 		_column = 0;
 		++_row;
-		if(_row == TERMINAL_HEIGHT)
+	}
+	
+	if(_row == TERMINAL_HEIGHT)
+	{
+		for(uint32_t y = 0; y < TERMINAL_HEIGHT - 1; ++y)
 		{
-			++_row;
-			
-			if(_row == TERMINAL_HEIGHT - 1)
+			for(uint32_t x = 0; x < TERMINAL_WIDTH; ++x)
 			{
-				for(uint32_t y = 0; y < TERMINAL_HEIGHT - 1; ++y)
-				{
-					for(uint32_t x = 0; x < TERMINAL_WIDTH; ++x)
-					{
-						_buffer[y * TERMINAL_WIDTH + x] = _buffer[(y + 1) * TERMINAL_WIDTH + x];
-					}
-				}
-				
-				for(uint32_t x = 0; x < TERMINAL_WIDTH; ++x)
-				{
-					PutChar(' ', _row, x);
-				}
-				
-				--_row;
+				_buffer[y * TERMINAL_WIDTH + x] = _buffer[(y + 1) * TERMINAL_WIDTH + x];
 			}
 		}
+		
+		for(uint32_t x = 0; x < TERMINAL_WIDTH; ++x)
+		{
+			PutChar(' ', TERMINAL_HEIGHT - 1, x);
+		}
+		
+		--_row;
 	}
 	
 	uint16_t cursorPosition = _row * 80 + _column;

@@ -1,7 +1,6 @@
 #include "DescriptorTables.h"
 #include "Interrupts.h"
 #include "MemoryManager.h"
-#include "Paging.h"
 #include "Terminal.h"
 #include "Timer.h"
  
@@ -25,7 +24,6 @@ void kernel_main()
 	Timer::Init(120);
 	
 	MemoryManager::Init();
-	Paging::Init();
 	
-	Terminal::Write("Ready!");
+	Terminal::Write("Ready!\n");
 }
