@@ -1,5 +1,5 @@
 global magic
-global mbd
+global mb
 
 ; Declare constants used for creating a multiboot header.
 MBALIGN     equ  1<<0                   ; align loaded modules on page boundaries
@@ -40,7 +40,7 @@ _start:
 	mov esp, stack_top
 	
 	mov [magic], eax
-	mov [mbd], ebx
+	mov [mb], ebx
 
 	extern kernel_main
 	call kernel_main
@@ -51,4 +51,4 @@ _start:
 section .bss
 align 4
 magic: resd 1
-mbd: resd 1
+mb: resd 1

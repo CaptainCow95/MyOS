@@ -19,7 +19,7 @@ uint32_t MemoryManager::_nframes;
 PageDirectory* MemoryManager::_kernelDirectory;
 PageDirectory* MemoryManager::_currentDirectory;
 
-void MemoryManager::Init()
+void MemoryManager::Init(multiboot_info* mb)
 {
 	_endOfMemory = (uint32_t)&endkernel;
 	
@@ -36,21 +36,50 @@ void MemoryManager::Init()
 	_lastHeader = _firstHeader;
 	_endOfMemory += HEAP_STEP + HEAP_RESERVE;
 	
-	uint32_t memoryEndPage = 0x1000000;
+	multiboot_mmap_entry* mmapEntry = (multiboot_mmap_entry*)mb->mmap_addr;
+	uint32_t memoryEndPage = 0;
+	while((uint32_t)mmapEntry < (uint32_t)mb->mmap_addr + (uint32_t)mb->mmap_length)
+	{
+		if(mmapEntry->type == MULTIBOOT_MEMORY_AVAILABLE && memoryEndPage < (uint32_t)mmapEntry->addr + (uint32_t)mmapEntry->len)
+		{
+			memoryEndPage = (uint32_t)mmapEntry->addr + (uint32_t)mmapEntry->len;
+		}
+		
+		mmapEntry = (multiboot_mmap_entry*)((uint32_t)mmapEntry + (uint32_t)mmapEntry->size + sizeof(mmapEntry->size));
+	}
 	
 	_nframes = memoryEndPage / 0x1000;
 	_frames = (uint32_t*)Allocate(INDEX_FROM_BIT(_nframes));
 	memset(_frames, 0, INDEX_FROM_BIT(_nframes));
-
+	
 	_kernelDirectory = (PageDirectory*)AllocateAligned(sizeof(PageDirectory));
 	memset(_kernelDirectory, 0, sizeof(PageDirectory));
 	_currentDirectory = _kernelDirectory;
 	
+	// Identity map memory
 	uint32_t i = 0;
 	while(i < _endOfMemory)
 	{
 		AllocatePage(GetPage(i, true, _kernelDirectory), true, true);
 		i += 0x1000;
+	}
+	
+	// Now that everything has been identity mapped,
+	// mark the rest of unusable/reserved memory
+	mmapEntry = (multiboot_mmap_entry*)mb->mmap_addr;
+	while((uint32_t)mmapEntry < (uint32_t)mb->mmap_addr + (uint32_t)mb->mmap_length)
+	{
+		if(mmapEntry->type != MULTIBOOT_MEMORY_AVAILABLE && (uint32_t)mmapEntry->addr < memoryEndPage)
+		{
+			for(uint32_t j = (uint32_t)mmapEntry->addr; j < (uint32_t)mmapEntry->addr + (uint32_t)mmapEntry->len; j += 0x1000)
+			{
+				SetFrame(j);
+			}
+			
+			SetFrame((uint32_t)mmapEntry->addr + (uint32_t)mmapEntry->len);
+		}
+		
+		mmapEntry = (multiboot_mmap_entry*)((uint32_t)mmapEntry + (uint32_t)mmapEntry->size + sizeof(mmapEntry->size));
 	}
 	
 	Interrupts::RegisterInterruptHandler(14, &PageFault);
@@ -62,37 +91,6 @@ void MemoryManager::Init()
 	asm volatile("mov %%cr0, %0": "=r"(cr0));
 	cr0 |= 0x80000000;
 	asm volatile("mov %0, %%cr0":: "r"(cr0));
-}
-
-void MemoryManager::PrintMemory()
-{
-	Terminal::Write("Memory Headers:\n");
-	MemoryHeader* header = _firstHeader;
-	while(header != 0)
-	{
-		Terminal::WriteHex((uint32_t)header);
-		Terminal::Write(" ");
-		if(header->Used)
-		{
-			Terminal::Write("Used ");
-		}
-		else
-		{
-			Terminal::Write("Free ");
-		}
-		Terminal::WriteHex(header->Size);
-		Terminal::Write(" ");
-		Terminal::WriteHex((uint32_t)header->Previous);
-		Terminal::Write(" ");
-		Terminal::WriteHex((uint32_t)header->Next);
-		Terminal::Write(" ");
-		Terminal::WriteHex((uint32_t)header->PreviousFree);
-		Terminal::Write(" ");
-		Terminal::WriteHex((uint32_t)header->NextFree);
-		Terminal::Write("\n");
-		
-		header = header->Next;
-	}
 }
 
 void* MemoryManager::Allocate(size_t size)
@@ -508,7 +506,7 @@ void MemoryManager::FreePage(Page* page)
 void MemoryManager::SwitchPageDirectory(PageDirectory* directory)
 {
 	_currentDirectory = directory;
-	asm volatile("mov %0, %%cr3":: "r"(&directory->TablesPhysical));
+	asm volatile("mov %0, %%cr3":: "r"(directory->TablesPhysical));
 }
 
 Page* MemoryManager::GetPage(uint32_t address, bool make, PageDirectory* directory)

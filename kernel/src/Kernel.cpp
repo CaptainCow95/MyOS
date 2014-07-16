@@ -1,6 +1,7 @@
 #include "DescriptorTables.h"
 #include "Interrupts.h"
 #include "MemoryManager.h"
+#include "Multiboot.h"
 #include "Terminal.h"
 #include "Timer.h"
  
@@ -10,20 +11,20 @@ extern "C" /* Use C linkage for kernel_main. */
 void kernel_main()
 {
 	extern uint32_t magic;
-	//extern void* mbd;
+	extern multiboot_info* mb;
 	
 	Terminal::Init();
 	
-	if(magic != 0x2BADB002)
+	if(magic != MULTIBOOT_BOOTLOADER_MAGIC)
 	{
-		PANIC("Magic value is not 0x2BADB002!");
+		PANIC("Multiboot magic value was not correct!");
 	}
 	
 	DescriptorTables::Init();
 	Interrupts::Init();
 	Timer::Init(120);
 	
-	MemoryManager::Init();
+	MemoryManager::Init(mb);
 	
 	Terminal::Write("Ready!\n");
 }

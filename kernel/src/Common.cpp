@@ -31,7 +31,7 @@ void panic(const char* message, const char* file, uint32_t line)
 	Terminal::Write(") at ");
 	Terminal::Write(file);
 	Terminal::Write(":");
-	Terminal::WriteHex(line);
+	Terminal::WriteDec(line);
 	Terminal::Write(")");
 	
 	for(;;);

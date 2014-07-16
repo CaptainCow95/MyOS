@@ -3,6 +3,7 @@
 
 #include "Common.h"
 #include "Interrupts.h"
+#include "Multiboot.h"
 
 struct Page
 {
@@ -40,14 +41,13 @@ struct MemoryHeader
 class MemoryManager
 {
 public:
-	static void Init();
+	static void Init(multiboot_info*);
 	static void FinishInit();
 	static void* Allocate(size_t);
 	static void* AllocateAligned(size_t);
 	static void* AllocatePhysical(size_t, uint32_t*);
 	static void* AllocateAlignedPhysical(size_t, uint32_t*);
 	static void Free(void*);
-	static void PrintMemory();
 private:
 	static void* Allocate(size_t, bool, uint32_t*);
 	static void InsertIntoFreeList(MemoryHeader*);
