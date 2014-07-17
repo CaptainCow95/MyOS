@@ -1,8 +1,6 @@
 #include "MemoryManager.h"
 #include "Terminal.h"
 
-extern uint32_t endkernel;
-
 #define INDEX_FROM_BIT(a) (a/(8*4))
 #define OFFSET_FROM_BIT(a) (a%(8*4))
 
@@ -19,9 +17,9 @@ uint32_t MemoryManager::_nframes;
 PageDirectory* MemoryManager::_kernelDirectory;
 PageDirectory* MemoryManager::_currentDirectory;
 
-void MemoryManager::Init(multiboot_info* mb)
+void MemoryManager::Init(uint32_t endOfMemory, multiboot_info* mb)
 {
-	_endOfMemory = (uint32_t)&endkernel;
+	_endOfMemory = endOfMemory;
 	
 	// align the memory
 	_endOfMemory &= 0xFFFFF000;

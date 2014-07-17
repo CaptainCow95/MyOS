@@ -6,3 +6,4 @@ default 0
 
 title MyOS
 kernel /boot/kernel.bin
+module /boot/initrd.img

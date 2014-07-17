@@ -41,7 +41,7 @@ struct MemoryHeader
 class MemoryManager
 {
 public:
-	static void Init(multiboot_info*);
+	static void Init(uint32_t, multiboot_info*);
 	static void FinishInit();
 	static void* Allocate(size_t);
 	static void* AllocateAligned(size_t);

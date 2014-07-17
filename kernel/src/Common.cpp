@@ -14,12 +14,32 @@ void* memset(void* s, int32_t c, size_t n)
 	return s;
 }
 
+void* memcpy(void* dest, const void* src, size_t count)
+{
+	char* dest8 = (char*)dest;
+	char* src8 = (char*)src;
+	
+	while(count--)
+	{
+		*dest8++ = *src8++;
+	}
+	
+	return dest;
+}
+
 size_t strlen(const char* str)
 {
 	size_t ret = 0;
 	while ( str[ret] != 0 )
 		ret++;
 	return ret;
+}
+
+char* strcpy(char* dest, const char* src)
+{
+	char* ptr = dest;
+	while((*dest++ = *src++));
+	return ptr;
 }
 
 void panic(const char* message, const char* file, uint32_t line)
