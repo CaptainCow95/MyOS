@@ -12,7 +12,7 @@ char* strcpy(char*, const char*);
 void itoa(int32_t, char*, int32_t);
 void itoa(uint32_t, char*, int32_t);
 
-#define PANIC(msg) panic(msg, __FILE__, __LINE__);
+#define PANIC(msg) panic(msg, __FILE__, __LINE__)
 
 void panic(const char*, const char*, uint32_t);
 

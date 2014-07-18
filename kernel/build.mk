@@ -6,7 +6,7 @@ CPPFLAGS_DEBUG_kernel := -g
 CPPFLAGS_RELEASE_kernel := -O2 -Werror
 LDFLAGS_kernel := -T kernel/linker.ld
 LDFLAGS_DEBUG_kernel := -Map bin/debug/kernel.map
-LDFLAGS_RELEASE_kernel :=
+LDFLAGS_RELEASE_kernel := -Map bin/release/kernel.map
 
 kernel_PROGRAM := kernel.bin
 

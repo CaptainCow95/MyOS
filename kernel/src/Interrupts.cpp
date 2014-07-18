@@ -28,8 +28,6 @@ void Interrupts::Init()
 	{
 		_interruptHandlers[i] = 0;
 	}
-	
-	asm volatile("sti");
 }
 
 void Interrupts::RegisterInterruptHandler(uint8_t i, InterruptHandler handler)

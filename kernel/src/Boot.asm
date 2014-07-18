@@ -26,7 +26,7 @@ align 4
 section .bootstrap_stack
 align 4
 stack_bottom:
-times 16384 db 0
+times 0x4000 db 0
 stack_top:
  
 ; The linker script specifies _start as the entry point to the kernel and the

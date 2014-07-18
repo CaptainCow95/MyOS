@@ -3,10 +3,35 @@
 #include "Interrupts.h"
 #include "MemoryManager.h"
 #include "Multiboot.h"
+#include "TaskManager.h"
 #include "Terminal.h"
 #include "Timer.h"
 
 extern uint32_t endkernel;
+
+FileSystemNode* root;
+
+void ReadFileSystem()
+{
+	uint32_t i = 0;
+	FileSystemNode* node = 0;
+	while((node = FileSystem::ReadDirectory(root, i)) != 0)
+	{
+		Terminal::Write("Found file ");
+		Terminal::Write(node->Name);
+		
+		Terminal::Write("\n\t contents: \"");
+		char buf[256];
+		uint32_t size = FileSystem::Read(node, 0, 256, (uint8_t*)buf);
+		for(uint32_t j = 0; j < size; ++j)
+		{
+			Terminal::PutChar(buf[j]);
+		}
+		
+		Terminal::Write("\"\n");
+		++i;
+	}
+}
 
 extern "C" void kernel_main()
 {
@@ -39,26 +64,13 @@ extern "C" void kernel_main()
 	
 	MemoryManager::Init(endOfMemory, mb);
 	
-	FileSystemNode* root = Initrd::Init(initrdLocation);
+	TaskManager::Init();
+	
+	root = Initrd::Init(initrdLocation);
+	
+	asm volatile("sti");
 	
 	Terminal::Write("Ready!\n");
 	
-	uint32_t i = 0;
-	FileSystemNode* node = 0;
-	while((node = FileSystem::ReadDirectory(root, i)) != 0)
-	{
-		Terminal::Write("Found file ");
-		Terminal::Write(node->Name);
-		
-		Terminal::Write("\n\t contents: \"");
-		char buf[256];
-		uint32_t size = FileSystem::Read(node, 0, 256, (uint8_t*)buf);
-		for(uint32_t j = 0; j < size; ++j)
-		{
-			Terminal::PutChar(buf[j]);
-		}
-		
-		Terminal::Write("\"\n");
-		++i;
-	}
+	TaskManager::CreateThread(&ReadFileSystem);
 }

@@ -1,3 +1,4 @@
+#include "TaskManager.h"
 #include "Timer.h"
 #include "Terminal.h"
 
@@ -18,4 +19,5 @@ void Timer::Init(uint32_t frequency)
 
 void Timer::InterruptCallback(Registers*)
 {
+	TaskManager::SwitchTask();
 }
