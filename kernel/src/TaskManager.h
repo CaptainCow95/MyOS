@@ -6,7 +6,7 @@
 struct Task
 {
 	uint32_t Id;
-	uint32_t Esp, Ebp, Eip;
+	uint32_t Esp, Ebp, Eip, Stack;
 	Task* NextTask;
 	bool SwitchedTasks;
 };
@@ -18,6 +18,8 @@ public:
 	static void SwitchTask();
 	static void CreateThread(void(*)());
 private:
+	static void ThreadFinished();
+	
 	static Task* _currentTask;
 	static Task* _taskQueueStart;
 	static uint32_t _nextId;

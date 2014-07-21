@@ -38,6 +38,8 @@ extern "C" void kernel_main()
 	extern uint32_t magic;
 	extern multiboot_info* mb;
 	
+	mb = (multiboot_info*)((uint32_t)mb + 0xC0000000);
+	
 	Terminal::Init();
 	
 	if(magic != MULTIBOOT_BOOTLOADER_MAGIC)
@@ -49,24 +51,27 @@ extern "C" void kernel_main()
 	Interrupts::Init();
 	Timer::Init(120);
 	
-	uint32_t endOfMemory = (uint32_t)&endkernel;
-	uint32_t initrdLocation = *((uint32_t*)mb->mods_addr);
-	uint32_t initrdEnd = *(uint32_t*)(mb->mods_addr + 4);
+	MemoryManager::Init(mb);
 	
-	// Copy the initrd down near the kernel so we don't have
-	// to worry about where the memory is and overriding it.
-	// Also page align so there are absolutely no alignment issues.
-	endOfMemory &= 0xFFFFF000;
-	endOfMemory += 0x1000;
-	memcpy((void*)endOfMemory, (void*)initrdLocation, initrdEnd - initrdLocation);
-	initrdLocation = endOfMemory;
-	endOfMemory += initrdEnd - initrdLocation;
+	uint32_t initrdStart = *(uint32_t*)(mb->mods_addr + 0xC0000000);
+	uint32_t initrdEnd = *(uint32_t*)(mb->mods_addr + 4 + 0xC0000000);
 	
-	MemoryManager::Init(endOfMemory, mb);
+	for(uint32_t i = initrdStart & 0xFFFFF000; i < initrdEnd; i += 0x1000)
+	{
+		MemoryManager::AllocatePage(MemoryManager::GetPage(i, true, MemoryManager::GetCurrentDirectory()), true, true, true, i);
+	}
 	
-	TaskManager::Init();
+	uint32_t initrdLocation = (uint32_t)MemoryManager::AllocateAligned(initrdEnd - initrdStart);
+	memcpy((void*)initrdLocation, (void*)initrdStart, initrdEnd - initrdStart);
+	
+	for(uint32_t i = initrdStart & 0xFFFFF000; i < initrdEnd; i += 0x1000)
+	{
+		MemoryManager::FreePage(MemoryManager::GetPage(i, false, MemoryManager::GetCurrentDirectory()));
+	}
 	
 	root = Initrd::Init(initrdLocation);
+	
+	TaskManager::Init();
 	
 	asm volatile("sti");
 	

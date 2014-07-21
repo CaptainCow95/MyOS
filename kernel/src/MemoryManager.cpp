@@ -16,10 +16,14 @@ uint32_t* MemoryManager::_frames;
 uint32_t MemoryManager::_nframes;
 PageDirectory* MemoryManager::_kernelDirectory;
 PageDirectory* MemoryManager::_currentDirectory;
+bool MemoryManager::_initializing;
 
-void MemoryManager::Init(uint32_t endOfMemory, multiboot_info* mb)
+extern uint32_t* endkernel;
+
+void MemoryManager::Init(multiboot_info* mb)
 {
-	_endOfMemory = endOfMemory;
+	_initializing = true;
+	_endOfMemory = (uint32_t)&endkernel;
 	
 	// align the memory
 	_endOfMemory &= 0xFFFFF000;
@@ -34,9 +38,9 @@ void MemoryManager::Init(uint32_t endOfMemory, multiboot_info* mb)
 	_lastHeader = _firstHeader;
 	_endOfMemory += HEAP_STEP + HEAP_RESERVE;
 	
-	multiboot_mmap_entry* mmapEntry = (multiboot_mmap_entry*)mb->mmap_addr;
+	multiboot_mmap_entry* mmapEntry = (multiboot_mmap_entry*)(mb->mmap_addr + 0xC0000000);
 	uint32_t memoryEndPage = 0;
-	while((uint32_t)mmapEntry < (uint32_t)mb->mmap_addr + (uint32_t)mb->mmap_length)
+	while((uint32_t)mmapEntry < (uint32_t)mb->mmap_addr + (uint32_t)mb->mmap_length + 0xC0000000)
 	{
 		if(mmapEntry->type == MULTIBOOT_MEMORY_AVAILABLE && memoryEndPage < (uint32_t)mmapEntry->addr + (uint32_t)mmapEntry->len)
 		{
@@ -46,26 +50,29 @@ void MemoryManager::Init(uint32_t endOfMemory, multiboot_info* mb)
 		mmapEntry = (multiboot_mmap_entry*)((uint32_t)mmapEntry + (uint32_t)mmapEntry->size + sizeof(mmapEntry->size));
 	}
 	
-	_nframes = memoryEndPage / 0x1000;
+	// Map all 4 gb of memory
+	_nframes = 0x100000;
 	_frames = (uint32_t*)Allocate(INDEX_FROM_BIT(_nframes));
 	memset(_frames, 0, INDEX_FROM_BIT(_nframes));
 	
 	_kernelDirectory = (PageDirectory*)AllocateAligned(sizeof(PageDirectory));
 	memset(_kernelDirectory, 0, sizeof(PageDirectory));
 	_currentDirectory = _kernelDirectory;
+	uint32_t offset = (uint32_t)_kernelDirectory->TablesPhysical - (uint32_t)_kernelDirectory;
+	_kernelDirectory->PhysicalAddress = ((uint32_t)_kernelDirectory) - 0xC0000000 + offset;
 	
-	// Identity map memory
-	uint32_t i = 0;
+	// map from 0xC0000000 to the end of the kernel to 0x0 and on.
+	uint32_t i = 0xC0000000;
 	while(i < _endOfMemory)
 	{
-		AllocatePage(GetPage(i, true, _kernelDirectory), true, true);
+		AllocatePage(GetPage(i, true, _kernelDirectory), true, true, true, i - 0xC0000000);
 		i += 0x1000;
 	}
 	
 	// Now that everything has been identity mapped,
 	// mark the rest of unusable/reserved memory
-	mmapEntry = (multiboot_mmap_entry*)mb->mmap_addr;
-	while((uint32_t)mmapEntry < (uint32_t)mb->mmap_addr + (uint32_t)mb->mmap_length)
+	mmapEntry = (multiboot_mmap_entry*)(mb->mmap_addr + 0xC0000000);
+	while((uint32_t)mmapEntry < (uint32_t)mb->mmap_addr + (uint32_t)mb->mmap_length + 0xC0000000)
 	{
 		if(mmapEntry->type != MULTIBOOT_MEMORY_AVAILABLE && (uint32_t)mmapEntry->addr < memoryEndPage)
 		{
@@ -89,6 +96,8 @@ void MemoryManager::Init(uint32_t endOfMemory, multiboot_info* mb)
 	asm volatile("mov %%cr0, %0": "=r"(cr0));
 	cr0 |= 0x80000000;
 	asm volatile("mov %0, %%cr0":: "r"(cr0));
+	
+	_initializing = false;
 }
 
 void* MemoryManager::Allocate(size_t size)
@@ -241,7 +250,15 @@ void* MemoryManager::Allocate(size_t size, bool align, uint32_t* physical)
 		
 		if(physical)
 		{
-			*physical = returnAddress;
+			if(_initializing)
+			{
+				*physical = returnAddress - 0xC0000000;
+			}
+			else
+			{
+				Page* tempPage = GetPage(returnAddress, false, _currentDirectory);
+				*physical = (tempPage->Frame * 0x1000) + (returnAddress & 0x00000FFF);
+			}
 		}
 		
 		return (void*)returnAddress;
@@ -395,7 +412,7 @@ bool MemoryManager::ExpandHeap()
 	// 3. allocate all new pages for the heap
 	for(uint32_t i = endOfHeap; i < endOfHeap + HEAP_STEP + HEAP_RESERVE; i += 0x1000)
 	{
-		AllocatePage(GetPage(i, true, _currentDirectory), true, true);
+		AllocatePage(GetPage(i, true, _currentDirectory), true, true, false, 0);
 	}
 	
 	// 4. add new free header with the remaining space
@@ -464,7 +481,12 @@ uint32_t MemoryManager::FirstFrame()
 	return -1;
 }
 
-void MemoryManager::AllocatePage(Page* page, bool isKernel, bool isWriteable)
+PageDirectory* MemoryManager::GetCurrentDirectory()
+{
+	return _currentDirectory;
+}
+
+void MemoryManager::AllocatePage(Page* page, bool isKernel, bool isWriteable, bool specificLocation, uint32_t location)
 {
 	if(page->Frame != 0)
 	{
@@ -472,17 +494,28 @@ void MemoryManager::AllocatePage(Page* page, bool isKernel, bool isWriteable)
 	}
 	else
 	{
-		uint32_t idx = FirstFrame();
-		if(idx == (uint32_t)-1)
+		uint32_t idx = 0;
+		if(specificLocation)
 		{
-			PANIC("No free pages to allocate!");
+			idx = location & 0xFFFFF000;
+		}
+		else
+		{
+			idx = FirstFrame();
+			if(idx == (uint32_t)-1)
+			{
+				PANIC("No free pages to allocate!");
+			}
+			
+			idx *= 0x1000;
 		}
 		
-		SetFrame(idx * 0x1000);
+		SetFrame(idx);
 		page->Present = 1;
 		page->ReadWrite = isWriteable;
 		page->User = isKernel;
-		page->Frame = idx;
+		page->Frame = idx / 0x1000;
+		InvalidatePage(idx);
 	}
 }
 
@@ -498,13 +531,19 @@ void MemoryManager::FreePage(Page* page)
 	{
 		ClearFrame(frame);
 		page->Frame = 0x0;
+		InvalidatePage(frame * 0x1000);
 	}
+}
+
+void MemoryManager::InvalidatePage(uint32_t address)
+{
+	asm volatile("invlpg (%0)" ::"r" (address) : "memory");
 }
 
 void MemoryManager::SwitchPageDirectory(PageDirectory* directory)
 {
 	_currentDirectory = directory;
-	asm volatile("mov %0, %%cr3":: "r"(directory->TablesPhysical));
+	asm volatile("mov %0, %%cr3":: "r"(directory->PhysicalAddress));
 }
 
 Page* MemoryManager::GetPage(uint32_t address, bool make, PageDirectory* directory)

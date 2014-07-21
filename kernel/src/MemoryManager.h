@@ -41,13 +41,20 @@ struct MemoryHeader
 class MemoryManager
 {
 public:
-	static void Init(uint32_t, multiboot_info*);
+	static void Init(multiboot_info*);
 	static void FinishInit();
 	static void* Allocate(size_t);
 	static void* AllocateAligned(size_t);
 	static void* AllocatePhysical(size_t, uint32_t*);
 	static void* AllocateAlignedPhysical(size_t, uint32_t*);
 	static void Free(void*);
+	
+	static PageDirectory* GetCurrentDirectory();
+	
+	static void SwitchPageDirectory(PageDirectory*);
+	static Page* GetPage(uint32_t, bool, PageDirectory*);
+	static void AllocatePage(Page*, bool, bool, bool, uint32_t);
+	static void FreePage(Page*);
 private:
 	static void* Allocate(size_t, bool, uint32_t*);
 	static void InsertIntoFreeList(MemoryHeader*);
@@ -59,11 +66,6 @@ private:
 	static MemoryHeader* _firstHeader;
 	static MemoryHeader* _lastHeader;
 	
-	static void SwitchPageDirectory(PageDirectory*);
-	static Page* GetPage(uint32_t, bool, PageDirectory*);
-	static void AllocatePage(Page*, bool, bool);
-	static void FreePage(Page*);
-	
 	static void PageFault(Registers*);
 	
 	static void SetFrame(uint32_t);
@@ -71,10 +73,13 @@ private:
 	static uint32_t TestFrame(uint32_t);
 	static uint32_t FirstFrame();
 	
+	static void InvalidatePage(uint32_t);
+	
 	static uint32_t* _frames;
 	static uint32_t _nframes;
 	static PageDirectory* _kernelDirectory;
 	static PageDirectory* _currentDirectory;
+	static bool _initializing;
 };
 
 #endif

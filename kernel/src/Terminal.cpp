@@ -13,7 +13,7 @@ void Terminal::Init()
 	_row = 0;
 	_column = 0;
 	SetColor(COLOR_LIGHT_GRAY, COLOR_BLACK);
-	_buffer = (uint16_t*)0xB8000;
+	_buffer = (uint16_t*)0xC00B8000;
 	for(uint32_t y = 0; y < TERMINAL_HEIGHT; ++y)
 	{
 		for(uint32_t x = 0; x < TERMINAL_WIDTH; ++x)

@@ -54,7 +54,10 @@ void TaskManager::CreateThread(void(*newEip)())
 	Task* newTask = (Task*)MemoryManager::Allocate(sizeof(Task));
 	newTask->Id = _nextId++;
 	uint32_t stack = (uint32_t)MemoryManager::AllocateAligned(0x4000);
-	newTask->Esp = newTask->Ebp = stack + 0x4000;
+	newTask->Stack = stack;
+	newTask->Esp = stack + 0x4000;
+	newTask->Esp = newTask->Ebp = newTask->Esp - sizeof(uint32_t);
+	*((uint32_t*)newTask->Esp) = (uint32_t)&ThreadFinished;
 	newTask->Eip = (uint32_t)newEip;
 	newTask->NextTask = 0;
 	newTask->SwitchedTasks = false;
@@ -70,4 +73,21 @@ void TaskManager::CreateThread(void(*newEip)())
 	lastTask->NextTask = newTask;
 	
 	asm volatile("sti");
+}
+
+void TaskManager::ThreadFinished()
+{
+	asm volatile("cli");
+	Task* task = _taskQueueStart;
+	while(task->NextTask != _currentTask)
+	{
+		task = task->NextTask;
+	}
+	
+	task->NextTask = task->NextTask->NextTask;
+	
+	MemoryManager::Free((void*)_currentTask->Stack);
+	asm volatile("sti");
+	
+	for(;;);
 }
