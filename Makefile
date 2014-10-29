@@ -1,5 +1,9 @@
 # all the modules that are part of the OS
 MODULES := kernel initrd
+# Kernel CPP Compiler
+KernelCPPCompiler := ./compiler/bin/i686-elf-g++
+# Kernal Linker
+KernalLinker := ./compiler/bin/i686-elf-ld
 # global cpp flags
 CPPFLAGS_global := -MMD -I includes
 # global asm flags
@@ -47,12 +51,12 @@ define RULES_KERNEL_template
 $(1)/obj/debug/%.o: $(1)/src/%.cpp
 	@mkdir -p ./$(1)/obj/debug
 	@echo "g++  " $$<
-	@i686-elf-g++ $$(CPPFLAGS_global) $$(CPPFLAGS_$(1)) $$(CPPFLAGS_DEBUG_$(1)) -c $$< -o $$@
+	@$$(KernelCPPCompiler) $$(CPPFLAGS_global) $$(CPPFLAGS_$(1)) $$(CPPFLAGS_DEBUG_$(1)) -c $$< -o $$@
 
 $(1)/obj/release/%.o: $(1)/src/%.cpp
 	@mkdir -p ./$(1)/obj/release
 	@echo "g++  " $$<
-	@i686-elf-g++ $$(CPPFLAGS_global) $$(CPPFLAGS_$(1)) $$(CPPFLAGS_RELEASE_$(1)) -c $$< -o $$@
+	@$$(KernelCPPCompiler) $$(CPPFLAGS_global) $$(CPPFLAGS_$(1)) $$(CPPFLAGS_RELEASE_$(1)) -c $$< -o $$@
 
 $(1)/obj/debug/%.o: $(1)/src/%.asm
 	@mkdir -p ./$(1)/obj/debug
@@ -84,11 +88,11 @@ DEPENDENCIES := $(DEPENDENCIES) $(patsubst %,$(2)/obj/%.d,$(basename $($(2)_SOUR
 
 bin/debug/$(1): $(patsubst %,$(2)/obj/debug/%.o,$(basename $($(2)_SOURCES))) $(foreach library,$($(2)_LIBRARIES),lib/$(library))
 	@mkdir -p ./bin/debug
-	@i686-elf-ld $$(LDFLAGS_global) $$(LDFLAGS_$(2)) $$(LDFLAGS_DEBUG_$(2)) $$^ -o $$@
+	@$$(KernalLinker) $$(LDFLAGS_global) $$(LDFLAGS_$(2)) $$(LDFLAGS_DEBUG_$(2)) $$^ -o $$@
 
 bin/release/$(1): $(patsubst %,$(2)/obj/release/%.o,$(basename $($(2)_SOURCES))) $(foreach library,$($(2)_LIBRARIES),lib/$(library))
 	@mkdir -p ./bin/release
-	@i686-elf-ld $$(LDFLAGS_global) $$(LDFLAGS_$(2)) $$(LDFLAGS_RELEASE_$(2)) $$^ -o $$@
+	@$$(KernalLinker) $$(LDFLAGS_global) $$(LDFLAGS_$(2)) $$(LDFLAGS_RELEASE_$(2)) $$^ -o $$@
 endef
 
 # template to include all the helper program build steps
