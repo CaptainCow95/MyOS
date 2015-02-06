@@ -93,6 +93,8 @@ void DescriptorTables::InitIDT()
 	IDTSetGate(46, (uint32_t)irq14, 0x08, 0x8E);
 	IDTSetGate(47, (uint32_t)irq15, 0x08, 0x8E);
 	
+	IDTSetGate(128, (uint32_t)irq128, 0x08, 0x8E);
+	
 	IDTFlush((uint32_t)&_idtPtr);
 }
 

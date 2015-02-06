@@ -17,8 +17,10 @@ public:
 	static void Init();
 	static void SwitchTask();
 	static void CreateThread(void(*)());
+	static void RunExecutable(uint32_t startAddress);
 private:
 	static void ThreadFinished();
+	static void ExecutableFinished();
 	
 	static Task* _currentTask;
 	static Task* _taskQueueStart;

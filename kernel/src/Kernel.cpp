@@ -3,6 +3,7 @@
 #include "Interrupts.h"
 #include "MemoryManager.h"
 #include "Multiboot.h"
+#include "SystemCalls.h"
 #include "TaskManager.h"
 #include "Terminal.h"
 #include "Timer.h"
@@ -50,8 +51,8 @@ extern "C" void kernel_main()
 	DescriptorTables::Init();
 	Interrupts::Init();
 	Timer::Init(120);
-	
 	MemoryManager::Init(mb);
+	SystemCalls::Init();
 	
 	uint32_t initrdStart = *(uint32_t*)(mb->mods_addr + 0xC0000000);
 	uint32_t initrdEnd = *(uint32_t*)(mb->mods_addr + 4 + 0xC0000000);

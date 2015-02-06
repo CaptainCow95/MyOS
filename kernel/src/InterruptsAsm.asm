@@ -77,6 +77,8 @@ IRQ 13, 45
 IRQ 14, 46
 IRQ 15, 47
 
+IRQ 128, 128
+
 extern InterruptHandlerFunction
 
 InterruptCommonStub:

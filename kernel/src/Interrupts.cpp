@@ -1,10 +1,10 @@
 #include "Interrupts.h"
-#include "Terminal.h"
 
 InterruptHandler _interruptHandlers[256];
 
 extern "C" void InterruptHandlerFunction(Registers* regs)
 {
+	regs->InterruptNumber = regs->InterruptNumber & 0xFF;
 	if(regs->InterruptNumber >= 32)
 	{
 		if(regs->InterruptNumber >= 40)

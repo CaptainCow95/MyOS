@@ -20,6 +20,8 @@
 #define IRQ14 46
 #define IRQ15 47
 
+#define IRQ128 128
+
 struct Registers
 {
 	uint32_t ds;
